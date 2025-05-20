@@ -134,6 +134,32 @@
         </div>
       </div>
     </main>
+
+    <!-- Cargar Firebase App y Firestore COMPAT -->
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+      // Tu configuración
+      const firebaseConfig = {
+        apiKey: "AIzaSyBStQojuzxhzJCG6aRJ0NR7uLnG2xYTDOg",
+        authDomain: "examen-632a2.firebaseapp.com",
+        projectId: "examen-632a2",
+        storageBucket: "examen-632a2.firebasestorage.app",
+        messagingSenderId: "532730071529",
+        appId: "1:532730071529:web:8ac9351c4760331120a378",
+      };
+
+      // ✅ Así se inicializa en modo compat
+      firebase.initializeApp(firebaseConfig);
+
+      // ✅ Así accedes a Firestore
+      const db = firebase.firestore();
+
+      // Puedes hacer disponible `db` globalmente
+      window.db = db;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@multiavatar/multiavatar/multiavatar.min.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
     <script src="script.js"></script>
   </body>

@@ -1,91 +1,110 @@
 document.addEventListener("DOMContentLoaded", function () {
-  
-  function añadirAlumno() {
-   
+  const db = window.db;
 
+  // Leer alumnos desde Firestore al cargar
+  db.collection("alumnos").get().then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      const alumno = doc.data();
+      insertarFila(alumno.avatar, alumno.nombre, alumno.apellidos, alumno.dni, alumno.telefono, doc.id);
+    });
+  });
+
+  function añadirAlumno() {
     const nombre = document.getElementById("nombre").value.trim();
     const apellidos = document.getElementById("apellidos").value.trim();
     const dni = document.getElementById("dni").value.trim();
     const telefono = document.getElementById("telefono").value.trim();
- const avatar = document.createElement("img");
-avatar.src = `https://api.multiavatar.com/${nombre}.png`;
-avatar.alt = "Avatar";
-avatar.width = 40;
 
-    avatar.classList.add("rounded-circle"); // para que se vea redonda (opcional con Bootstrap)
-    console.log(nombre, apellidos, dni, telefono);
-    insertarFila(avatar, nombre, apellidos, dni, telefono)
+    // Generar SVG localmente con multiavatar
+    const svg = multiavatar(nombre); // Usando la librería local
+
+    // Guardar en Firestore
+    db.collection("alumnos").add({
+      nombre,
+      apellidos,
+      dni,
+      telefono,
+      avatar: svg
+    }).then((docRef) => {
+      console.log("Alumno guardado con ID:", docRef.id);
+      insertarFila(svg, nombre, apellidos, dni, telefono, docRef.id);
+    });
+
+    document.getElementById("formularioAlumno").reset();
   }
-  function insertarFila(avatar, nombre, apellidos, dni, telefono){
+
+function insertarFila(avatarSVG, nombre, apellidos, dni, telefono, id) {
   const fila = document.createElement("tr");
+  fila.setAttribute("data-id", id);
 
   const tdAvatar = document.createElement("td");
-  tdAvatar.appendChild(avatar);
+  tdAvatar.classList.add("align-middle"); // ✅ centra verticalmente el avatar
+  tdAvatar.innerHTML = avatarSVG;
 
   const tdNombre = document.createElement("td");
+  tdNombre.classList.add("align-middle");
   tdNombre.textContent = nombre;
 
   const tdApellidos = document.createElement("td");
+  tdApellidos.classList.add("align-middle");
   tdApellidos.textContent = apellidos;
 
   const tdDNI = document.createElement("td");
+  tdDNI.classList.add("align-middle");
   tdDNI.textContent = dni;
 
   const tdTelefono = document.createElement("td");
+  tdTelefono.classList.add("align-middle");
   tdTelefono.textContent = telefono;
 
   const tdAsistencia = document.createElement("td");
+  tdAsistencia.classList.add("align-middle");
 
-// Botón de asistencia (✔️)
-const btnPresente = document.createElement("button");
-btnPresente.innerHTML = `<i class="bi bi-check"></i>`;
-btnPresente.classList.add("btn", "btn-outline-primary", "btn-sm");
-btnPresente.setAttribute("type", "button");
-btnPresente.addEventListener("click", function () {
-  // Cambiar texto e icono
-  this.textContent = "Presente";
+  const btnPresente = document.createElement("button");
+  btnPresente.innerHTML = `<i class="bi bi-check"></i>`;
+  btnPresente.classList.add("btn", "btn-outline-primary", "btn-sm");
+  btnPresente.setAttribute("type", "button");
+  btnPresente.addEventListener("click", function () {
+    this.textContent = "Presente";
+    this.classList.remove("btn-outline-primary");
+    this.classList.add("btn-success", "fw-bold");
+    this.disabled = true;
+  });
 
-  // Cambiar estilo
-  this.classList.remove("btn-outline-primary");
-  this.classList.add("btn-success", "fw-bold");
+  const btnEliminar = document.createElement("button");
+  btnEliminar.innerHTML = `<i class="bi bi-trash"></i>`;
+  btnEliminar.classList.add("btn", "btn-danger", "btn-sm");
+  btnEliminar.setAttribute("type", "button");
+  btnEliminar.addEventListener("click", function () {
+    if (confirm("¿Seguro que quieres eliminar este alumno?")) {
+      const idDoc = this.closest("tr").getAttribute("data-id");
 
-  // Opcional: desactivar para no volver a pulsar
-  this.disabled = true;
-});
+      db.collection("alumnos").doc(idDoc).delete()
+        .then(() => {
+          console.log("Alumno eliminado de Firestore");
+          this.closest("tr").remove();
+        })
+        .catch((error) => {
+          console.error("Error al eliminar de Firestore:", error);
+        });
+    }
+  });
 
+    tdAsistencia.appendChild(btnPresente);
+    tdAsistencia.appendChild(btnEliminar);
 
-// Botón de eliminar (🗑️)
-const btnEliminar = document.createElement("button");
-btnEliminar.innerHTML = `<i class="bi bi-trash"></i>`;
-btnEliminar.classList.add("btn", "btn-danger", "btn-sm");
-btnEliminar.setAttribute("type", "button");
+    fila.appendChild(tdAvatar);
+    fila.appendChild(tdNombre);
+    fila.appendChild(tdApellidos);
+    fila.appendChild(tdDNI);
+    fila.appendChild(tdTelefono);
+    fila.appendChild(tdAsistencia);
 
-btnEliminar.addEventListener("click", function () {
-  if (confirm("¿Seguro que quieres eliminar este alumno?")) {
-    this.closest("tr").remove();
+    document.getElementById("listaAlumnos").appendChild(fila);
   }
-});
 
-
-
-// Añadir ambos al <td>
-tdAsistencia.appendChild(btnPresente);
-tdAsistencia.appendChild(btnEliminar);
-
-
-  fila.appendChild(tdAvatar);
-  fila.appendChild(tdNombre);
-  fila.appendChild(tdApellidos);
-  fila.appendChild(tdDNI);
-  fila.appendChild(tdTelefono);
-  fila.appendChild(tdAsistencia);
-
-  document.getElementById("listaAlumnos").appendChild(fila);
-}
-
-  document.getElementById("formularioAlumno").addEventListener("submit", function(e) {
+  document.getElementById("formularioAlumno").addEventListener("submit", function (e) {
     e.preventDefault();
     añadirAlumno();
   });
-
 });
